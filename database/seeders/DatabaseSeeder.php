@@ -15,18 +15,18 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $users = [
-            ['name' => 'Admin Testowy', 'email' => 'admin@example.com'],
-            ['name' => 'Anna Bójko', 'email' => 'anna@example.com'],
-            ['name' => 'Jan Kowalski', 'email' => 'jan@example.com'],
+            ['name' => 'admin', 'email' => 'admin@admin.com', 'password' => 'admin'],
+            ['name' => 'Anna Bójko', 'email' => 'anna@example.com', 'password' => 'password'],
+            ['name' => 'Jan Kowalski', 'email' => 'jan@example.com', 'password' => 'password'],
         ];
 
         foreach ($users as $user) {
-            User::query()->firstOrCreate(
+            User::query()->updateOrCreate(
                 ['email' => $user['email']],
                 [
                     'name' => $user['name'],
                     'email_verified_at' => now(),
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make($user['password']),
                 ],
             );
         }

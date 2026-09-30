@@ -1,6 +1,10 @@
 # playground-app
 
-Testowa aplikacja oparta na Laravel 12, Vue 3, TypeScript i Inertia. Środowisko developerskie działa w Docker Compose z PHP-FPM, Nginx, PostgreSQL i Vite.
+Testowa aplikacja commerce oparta na Laravel 12, Vue 3, TypeScript i Inertia. Środowisko developerskie działa w Docker Compose z PHP-FPM, Nginx, PostgreSQL i Vite.
+
+Aplikacja zawiera logowanie, dashboard, listy i szczegóły produktów, zamówień i klientów oraz lokalną kopię danych pobranych z DummyJSON. Pełne odpowiedzi API i surowy payload każdego rekordu są przechowywane w PostgreSQL, dzięki czemu projekt można swobodnie rozszerzać i używać do dalszych testów.
+
+Moduł raportów udostępnia zestawienie zamówień i zagregowanej sprzedaży produktów. Dane można filtrować po kraju, kategorii, nazwie i zakresie wartości, zmieniać liczbę wierszy podglądu oraz pobierać wszystkie przefiltrowane rekordy do wielostronicowego PDF.
 
 ## Uruchomienie
 
@@ -12,28 +16,27 @@ docker compose up --build
 
 Po uruchomieniu:
 
-- aplikacja: http://localhost:8080
+- aplikacja: http://localhost:8081
 - Vite HMR: http://localhost:5173
 - PostgreSQL: `localhost:5432`
 
-Migracje oraz seed podstawowych użytkowników wykonują się automatycznie przy starcie kontenera aplikacji.
+Migracje, seed podstawowych użytkowników i pierwszy import z DummyJSON wykonują się automatycznie przy starcie kontenera aplikacji.
 
-## Konta testowe
+## Konto administratora
 
-Każde konto ma hasło `password`:
+| Użytkownik | E-mail | Hasło |
+| --- | --- | --- |
+| admin | `admin@admin.com` | `admin` |
 
-| Użytkownik | E-mail |
-| --- | --- |
-| Admin Testowy | `admin@example.com` |
-| Anna Bójko | `anna@example.com` |
-| Jan Kowalski | `jan@example.com` |
+## Dane testowe
 
-Można również utworzyć konto przez formularz rejestracji.
+Koszyki DummyJSON są w aplikacji traktowane jako zamówienia. Import tworzy lokalne rekordy produktów, klientów, zamówień i pozycji zamówień oraz zapisuje kompletne odpowiedzi API jako snapshoty.
 
 ## Przydatne polecenia
 
 ```bash
 docker compose exec app php artisan test
+docker compose exec app php artisan dummyjson:sync --force
 docker compose exec app php artisan migrate:fresh --seed
 docker compose exec vite npm run lint
 docker compose down
