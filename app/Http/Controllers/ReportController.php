@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Services\SalesReportService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
@@ -46,30 +45,7 @@ class ReportController extends Controller
     public function download(Request $request, SalesReportService $reports): HttpResponse
     {
         $filters = $reports->filters($request);
-        $isProducts = $filters['type'] === 'products';
-
-        if ($isProducts) {
-            $query = $reports->productsQuery($filters);
-            $rows = $query->get();
-            $summary = $reports->productSummary($rows);
-        } else {
-            $query = $reports->ordersQuery($filters);
-            $rows = $query->get();
-            $summary = $reports->orderSummary($query);
-        }
-
-        $pdf = Pdf::loadView('reports.sales', [
-            'rows' => $rows,
-            'summary' => $summary,
-            'filters' => $filters,
-            'title' => $isProducts ? 'Raport sprzedaży produktów' : 'Raport zamówień',
-            'generatedAt' => now(),
-        ])->setPaper('a4', 'landscape');
-
-        $pdf->render();
-        $dompdf = $pdf->getDomPDF();
-        $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans');
-        $dompdf->getCanvas()->page_text(740, 565, 'Strona {PAGE_NUM} z {PAGE_COUNT}', $font, 8, [0.35, 0.38, 0.45]);
+        $pdf = $reports->pdf($filters);
 
         return $pdf->download(sprintf('raport-%s-%s.pdf', $filters['type'], now()->format('Y-m-d-His')));
     }

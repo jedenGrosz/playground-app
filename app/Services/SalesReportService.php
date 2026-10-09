@@ -5,20 +5,23 @@ namespace App\Services;
 use App\Models\ExternalUser;
 use App\Models\Order;
 use App\Models\Product;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Barryvdh\DomPDF\PDF as PdfDocument;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class SalesReportService
 {
     /**
      * @return array{type: string, search: string, country: string, category: string, price_min: float|null, price_max: float|null, per_page: int}
      */
-    public function filters(Request $request): array
+    public function filters(Request|array $input): array
     {
-        $validated = $request->validate([
+        $validated = Validator::validate($input instanceof Request ? $input->all() : $input, [
             'type' => ['nullable', 'in:orders,products'],
             'search' => ['nullable', 'string', 'max:100'],
             'country' => ['nullable', 'string', 'max:100'],
@@ -143,5 +146,35 @@ class SalesReportService
             'total' => (float) $rows->sum('total'),
             'discounted_total' => (float) $rows->sum('discounted_total'),
         ];
+    }
+
+    /** @param array<string, mixed> $filters */
+    public function pdf(array $filters): PdfDocument
+    {
+        $isProducts = $filters['type'] === 'products';
+
+        if ($isProducts) {
+            $rows = $this->productsQuery($filters)->get();
+            $summary = $this->productSummary($rows);
+        } else {
+            $query = $this->ordersQuery($filters);
+            $rows = $query->get();
+            $summary = $this->orderSummary($query);
+        }
+
+        $pdf = Pdf::loadView('reports.sales', [
+            'rows' => $rows,
+            'summary' => $summary,
+            'filters' => $filters,
+            'title' => $isProducts ? 'Raport sprzedaży produktów' : 'Raport zamówień',
+            'generatedAt' => now(),
+        ])->setPaper('a4', 'landscape');
+
+        $pdf->render();
+        $dompdf = $pdf->getDomPDF();
+        $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans');
+        $dompdf->getCanvas()->page_text(740, 565, 'Strona {PAGE_NUM} z {PAGE_COUNT}', $font, 8, [0.35, 0.38, 0.45]);
+
+        return $pdf;
     }
 }
